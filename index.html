@@ -164,31 +164,33 @@
     let currentRow = 0, currentTile = 0, gameOver = false;
     const board = document.getElementById("board");
     const message = document.getElementById("message");
-
-    // Fetch words from JSON and pick one based on day of the year
-    async function getDailyWord() {
+    
+    // Fetch words from JSON and pick the word of the day (based on IST)
+    async function getWordOfTheDay() {
       try {
-        const response = await fetch("words.json"); // your JSON file path
+        const response = await fetch("words.json");
         const data = await response.json();
         const words = data.words;
-
-        const today = new Date();
-        const start = new Date(today.getFullYear(), 0, 0);
-        const diff = today - start;
+    
+        // Get current IST date
+        const nowUTC = new Date();
+        const istOffset = 5.5 * 60; // IST is UTC +5:30
+        const nowIST = new Date(nowUTC.getTime() + istOffset * 60 * 1000);
+    
+        // Day of the year in IST
+        const start = new Date(nowIST.getFullYear(), 0, 0);
+        const diff = nowIST - start;
         const oneDay = 1000 * 60 * 60 * 24;
         const dayOfYear = Math.floor(diff / oneDay);
-
-        const index = dayOfYear % words.length; // daily word
+    
+        const index = dayOfYear % words.length;
         wordOfTheDay = words[index].toLowerCase();
         console.log("Today's word:", wordOfTheDay);
       } catch (error) {
         console.error("Failed to load words.json", error);
       }
     }
-
-    getDailyWord();
-
-    // Create board
+    getWordOfTheDay();
     for(let i=0;i<6;i++){
       let row=document.createElement("div");
       row.classList.add("row");
