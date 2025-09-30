@@ -1,0 +1,35 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #f0f0f0;
+}
+
+#board {
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  gap: 5px;
+  width: 300px;
+  margin: 20px auto;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.tile {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #ccc;
+  text-transform: uppercase;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+
+.correct { background: green; color: white; }
+.present { background: goldenrod; color: white; }
+.absent { background: #888; color: white; }
