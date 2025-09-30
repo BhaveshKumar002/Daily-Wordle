@@ -138,6 +138,18 @@
     text-align: center;
   }
 
+  /* Countdown Timer */
+  #countdown {
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 20px;
+    background: var(--tile-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+  }
+
 </style>
 </head>
 <body>
@@ -149,6 +161,7 @@
   <div class="game-wrapper">
     <div id="board"></div>
     <div class="keyboard-container">
+      <div id="countdown">Next word in: --:--:--</div>
       <div id="keyboard">
         <div class="keyboard-row"><button>A</button><button>B</button><button>C</button><button>D</button><button>E</button><button>F</button><button>G</button><button>H</button><button>I</button></div>
         <div class="keyboard-row"><button>J</button><button>K</button><button>L</button><button>M</button><button>N</button><button>O</button><button>P</button><button>Q</button><button>R</button></div>
@@ -164,6 +177,7 @@
     let currentRow = 0, currentTile = 0, gameOver = false;
     const board = document.getElementById("board");
     const message = document.getElementById("message");
+    const countdownElement = document.getElementById("countdown");
     
     // Fetch words from JSON and pick the word of the day (based on IST)
     async function getWordOfTheDay() {
@@ -191,6 +205,8 @@
       }
     }
     getWordOfTheDay();
+    
+    // Initialize board
     for(let i=0;i<6;i++){
       let row=document.createElement("div");
       row.classList.add("row");
@@ -201,6 +217,38 @@
       }
       board.appendChild(row);
     }
+
+    // Countdown timer
+    function updateCountdown() {
+      const nowUTC = new Date();
+      const istOffset = 5.5 * 60; // IST is UTC +5:30
+      const nowIST = new Date(nowUTC.getTime() + istOffset * 60 * 1000);
+      
+      // Get next IST midnight
+      const nextMidnightIST = new Date(nowIST);
+      nextMidnightIST.setHours(24, 0, 0, 0);
+      
+      // Convert to UTC for calculation
+      const nextMidnightUTC = new Date(nextMidnightIST.getTime() - istOffset * 60 * 1000);
+      
+      const timeLeft = nextMidnightUTC - nowUTC;
+      
+      if (timeLeft <= 0) {
+        // If we passed midnight, refresh the page to get the new word
+        location.reload();
+        return;
+      }
+      
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      
+      countdownElement.textContent = `Next word in: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Update countdown every second
+    setInterval(updateCountdown, 1000);
+    updateCountdown(); // Initial call
 
     // Input handling
     document.addEventListener("keydown", e => handleInput(e.key));
