@@ -160,86 +160,69 @@
   </div>
 
 <script>
-let wordOfTheDay="";
-let currentRow=0, currentTile=0let wordOfTheDay = "";
-let currentRow = 0, currentTile = 0, gameOver = false;
-const board = document.getElementById("board");
-const message = document.getElementById("message");
+let wordOfTheDay="apple";
+let currentRow=0, currentTile=0, gameOver=false;
+const board=document.getElementById("board");
+const message=document.getElementById("message");
 
 // Create board
-for (let i = 0; i < 6; i++) {
-  let row = document.createElement("div");
+for(let i=0;i<6;i++){
+  let row=document.createElement("div");
   row.classList.add("row");
-  for (let j = 0; j < 5; j++) {
-    let tile = document.createElement("div");
+  for(let j=0;j<5;j++){
+    let tile=document.createElement("div");
     tile.classList.add("tile");
     row.appendChild(tile);
   }
   board.appendChild(row);
 }
 
-// Fetch words from JSON and pick a random one
-async function getRandomWord() {
-  try {
-    const response = await fetch("words.json"); // path to your JSON file
-    const data = await response.json();
-    const words = data.words;
-    const randomIndex = Math.floor(Math.random() * words.length);
-    wordOfTheDay = words[randomIndex].toLowerCase();
-    console.log("Today's word:", wordOfTheDay);
-  } catch (error) {
-    console.error("Failed to load words.json", error);
-    wordOfTheDay = "apple"; // fallback
-  }
-}
-getRandomWord();
-
 // Input handling
-document.addEventListener("keydown", e => handleInput(e.key));
-document.querySelectorAll("#keyboard button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    let key = btn.textContent;
-    if (btn.id === "enter") key = "Enter";
-    if (btn.id === "backspace") key = "Backspace";
+document.addEventListener("keydown",e=>handleInput(e.key));
+document.querySelectorAll("#keyboard button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    let key=btn.textContent;
+    if(btn.id==="enter") key="Enter";
+    if(btn.id==="backspace") key="Backspace";
     handleInput(key);
   });
 });
 
-function handleInput(key) {
-  if (gameOver || !wordOfTheDay) return;
-  if (/^[a-zA-Z]$/.test(key) && currentTile < 5) {
-    let tile = board.children[currentRow].children[currentTile];
-    tile.textContent = key.toUpperCase();
+function handleInput(key){
+  if(gameOver) return;
+  if(/^[a-zA-Z]$/.test(key) && currentTile<5){
+    let tile=board.children[currentRow].children[currentTile];
+    tile.textContent=key.toUpperCase();
     tile.classList.add("filled");
     currentTile++;
-  } else if (key === "Backspace" && currentTile > 0) {
+  } else if(key==="Backspace" && currentTile>0){
     currentTile--;
-    let tile = board.children[currentRow].children[currentTile];
-    tile.textContent = "";
+    let tile=board.children[currentRow].children[currentTile];
+    tile.textContent="";
     tile.classList.remove("filled");
-  } else if (key === "Enter" && currentTile === 5) checkWord();
+  } else if(key==="Enter" && currentTile===5) checkWord();
 }
 
-function checkWord() {
-  let row = board.children[currentRow];
-  let guess = "";
-  for (let i = 0; i < 5; i++) guess += row.children[i].textContent.toLowerCase();
+function checkWord(){
+  let row=board.children[currentRow];
+  let guess="";
+  for(let i=0;i<5;i++) guess+=row.children[i].textContent.toLowerCase();
 
-  for (let i = 0; i < 5; i++) {
-    if (guess[i] === wordOfTheDay[i]) row.children[i].classList.add("correct");
-    else if (wordOfTheDay.includes(guess[i])) row.children[i].classList.add("present");
+  for(let i=0;i<5;i++){
+    if(guess[i]===wordOfTheDay[i]) row.children[i].classList.add("correct");
+    else if(wordOfTheDay.includes(guess[i])) row.children[i].classList.add("present");
     else row.children[i].classList.add("absent");
   }
 
-  if (guess === wordOfTheDay) { message.textContent = "🎉 You guessed it!"; gameOver = true; }
-  else if (++currentRow === 6) { message.textContent = `❌ The word was: ${wordOfTheDay.toUpperCase()}`; gameOver = true; }
-  currentTile = 0;
+  if(guess===wordOfTheDay){ message.textContent="🎉 You guessed it!"; gameOver=true; }
+  else if(++currentRow===6){ message.textContent=`❌ The word was: ${wordOfTheDay.toUpperCase()}`; gameOver=true; }
+  currentTile=0;
 }
 
 // Dark/Light mode
-document.getElementById("theme-toggle").addEventListener("click", () => {
+document.getElementById("theme-toggle").addEventListener("click",()=>{
   document.body.classList.toggle("dark");
-  document.getElementById("theme-toggle").textContent = document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
+  document.getElementById("theme-toggle").textContent=document.body.classList.contains("dark")?"☀️ Light Mode":"🌙 Dark Mode";
 });
 </script>
 </body>
