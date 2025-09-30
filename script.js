@@ -2,8 +2,9 @@ let wordOfTheDay;
 let currentRow = 0;
 let currentTile = 0;
 let gameOver = false;
-let board = document.getElementById("board");
-let message = document.getElementById("message");
+
+const board = document.getElementById("board");
+const message = document.getElementById("message");
 
 // Create the board
 for (let i = 0; i < 6; i++) {
@@ -25,7 +26,7 @@ async function getWordOfTheDay() {
   let startDate = new Date("2025-01-01");
   let dayNumber = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
   let wordIndex = dayNumber % data.words.length;
-  return data.words[wordIndex];
+  return data.words[wordIndex].toLowerCase();
 }
 
 getWordOfTheDay().then(word => {
@@ -33,25 +34,42 @@ getWordOfTheDay().then(word => {
   console.log("Today's Word:", wordOfTheDay); // Debug
 });
 
-// Handle keypress
+// Handle physical keyboard
 document.addEventListener("keydown", e => {
-  if (gameOver) return;
+  handleInput(e.key);
+});
 
-  if (e.key >= "a" && e.key <= "z" && currentTile < 5) {
+// Handle on-screen keyboard clicks
+document.querySelectorAll("#keyboard button").forEach(button => {
+  button.addEventListener("click", () => {
+    let key = button.textContent;
+
+    if (button.id === "enter") key = "Enter";
+    if (button.id === "backspace") key = "Backspace";
+
+    handleInput(key);
+  });
+});
+
+// Core input handler
+function handleInput(key) {
+  if (gameOver || !wordOfTheDay) return;
+
+  if (/^[a-zA-Z]$/.test(key) && currentTile < 5) {
     let row = board.children[currentRow];
     let tile = row.children[currentTile];
-    tile.textContent = e.key;
+    tile.textContent = key.toUpperCase();
     currentTile++;
   }
-  else if (e.key === "Backspace" && currentTile > 0) {
+  else if (key === "Backspace" && currentTile > 0) {
     currentTile--;
     let row = board.children[currentRow];
     row.children[currentTile].textContent = "";
   }
-  else if (e.key === "Enter" && currentTile === 5) {
+  else if (key === "Enter" && currentTile === 5) {
     checkWord();
   }
-});
+}
 
 function checkWord() {
   let row = board.children[currentRow];
