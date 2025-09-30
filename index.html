@@ -4,34 +4,38 @@
   <meta charset="UTF-8">
   <title>Daily Wordle</title>
   <style>
-    /* General Layout */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
       margin: 0;
       padding: 20px;
-      transition: background 0.3s, color 0.3s;
       background: var(--bg);
       color: var(--text);
-    }
-
-    h1 {
-      margin: 10px 0 20px;
-      font-size: 2.2rem;
-      letter-spacing: 2px;
-    }
-
-    /* Game Layout */
-    .game-container {
+      transition: background 0.3s, color 0.3s;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 30px;
-      max-width: 500px;
-      margin: auto;
+      justify-content: flex-start;
+      overflow: hidden;
     }
 
-    /* Wordle Board */
+    h1 {
+      margin: 10px 0;
+      font-size: 2rem;
+    }
+
+    /* Main container with board on left & keyboard on right */
+    .game-layout {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex: 1;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    /* Board */
     #board {
       display: grid;
       grid-template-rows: repeat(6, 1fr);
@@ -45,11 +49,11 @@
     }
 
     .tile {
-      width: 62px;
-      height: 62px;
+      width: 55px;
+      height: 55px;
       border: 2px solid var(--tile-border);
       text-transform: uppercase;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: bold;
       display: flex;
       align-items: center;
@@ -58,10 +62,7 @@
       transition: transform 0.15s, background 0.3s, color 0.3s, border 0.3s;
     }
 
-    .tile.filled {
-      transform: scale(1.05);
-    }
-
+    .tile.filled { transform: scale(1.05); }
     .correct { background: #6aaa64 !important; color: white; border: none !important; }
     .present { background: #c9b458 !important; color: white; border: none !important; }
     .absent  { background: #787c7e !important; color: white; border: none !important; }
@@ -80,36 +81,30 @@
     }
 
     #keyboard button {
-      padding: 14px 16px;
+      padding: 14px 12px;
       border: none;
       background: var(--key-bg);
       color: var(--key-text);
-      font-size: 16px;
+      font-size: 14px;
       font-weight: bold;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s, color 0.3s;
       min-width: 40px;
+      transition: background 0.2s;
     }
 
-    #keyboard button:hover {
-      background: var(--key-hover);
-    }
+    #keyboard button:hover { background: var(--key-hover); }
 
     #keyboard .special {
       background: #8ab4f8;
       color: white;
       padding: 14px 20px;
-      border-radius: 6px;
     }
-
-    #keyboard .special:hover {
-      background: #5a95f5;
-    }
+    #keyboard .special:hover { background: #5a95f5; }
 
     /* Message */
     #message {
-      margin-top: 20px;
+      margin-top: 15px;
       font-size: 18px;
       font-weight: bold;
       min-height: 24px;
@@ -137,27 +132,25 @@
     }
 
     #theme-toggle {
-      margin-bottom: 20px;
-      padding: 10px 18px;
+      margin-bottom: 15px;
+      padding: 8px 14px;
       border: none;
       background: #8ab4f8;
       color: white;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 14px;
       transition: background 0.3s;
     }
 
-    #theme-toggle:hover {
-      background: #5a95f5;
-    }
+    #theme-toggle:hover { background: #5a95f5; }
   </style>
 </head>
 <body>
   <h1>Daily Wordle</h1>
   <button id="theme-toggle">🌙 Dark Mode</button>
 
-  <div class="game-container">
+  <div class="game-layout">
     <div id="board"></div>
     <div id="keyboard">
       <div class="keyboard-row">
@@ -185,15 +178,13 @@
   <div id="message"></div>
 
   <script>
-    let wordOfTheDay;
-    let currentRow = 0;
-    let currentTile = 0;
-    let gameOver = false;
+    let wordOfTheDay = "apple"; // placeholder
+    let currentRow = 0, currentTile = 0, gameOver = false;
 
     const board = document.getElementById("board");
     const message = document.getElementById("message");
 
-    // Create the board
+    // Create 6x5 board
     for (let i = 0; i < 6; i++) {
       let row = document.createElement("div");
       row.classList.add("row");
@@ -205,94 +196,53 @@
       board.appendChild(row);
     }
 
-    // Fetch word of the day
-    async function getWordOfTheDay() {
-      let response = await fetch("words.json");
-      let data = await response.json();
-      let today = new Date();
-      let startDate = new Date("2025-01-01");
-      let dayNumber = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-      let wordIndex = dayNumber % data.words.length;
-      return data.words[wordIndex].toLowerCase();
-    }
-
-    getWordOfTheDay().then(word => {
-      wordOfTheDay = word;
-      console.log("Today's Word:", wordOfTheDay); // Debug
-    });
-
-    // Handle keyboard
+    // Keyboard & input
     document.addEventListener("keydown", e => handleInput(e.key));
-
-    document.querySelectorAll("#keyboard button").forEach(button => {
-      button.addEventListener("click", () => {
-        let key = button.textContent;
-        if (button.id === "enter") key = "Enter";
-        if (button.id === "backspace") key = "Backspace";
+    document.querySelectorAll("#keyboard button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        let key = btn.textContent;
+        if (btn.id === "enter") key = "Enter";
+        if (btn.id === "backspace") key = "Backspace";
         handleInput(key);
       });
     });
 
     function handleInput(key) {
-      if (gameOver || !wordOfTheDay) return;
-
+      if (gameOver) return;
       if (/^[a-zA-Z]$/.test(key) && currentTile < 5) {
-        let row = board.children[currentRow];
-        let tile = row.children[currentTile];
+        let tile = board.children[currentRow].children[currentTile];
         tile.textContent = key.toUpperCase();
         tile.classList.add("filled");
         currentTile++;
       }
       else if (key === "Backspace" && currentTile > 0) {
         currentTile--;
-        let row = board.children[currentRow];
-        row.children[currentTile].textContent = "";
-        row.children[currentTile].classList.remove("filled");
+        let tile = board.children[currentRow].children[currentTile];
+        tile.textContent = "";
+        tile.classList.remove("filled");
       }
-      else if (key === "Enter" && currentTile === 5) {
-        checkWord();
-      }
+      else if (key === "Enter" && currentTile === 5) checkWord();
     }
 
     function checkWord() {
       let row = board.children[currentRow];
       let guess = "";
-      for (let i = 0; i < 5; i++) {
-        guess += row.children[i].textContent.toLowerCase();
-      }
-
-      if (guess.length !== 5) return;
+      for (let i = 0; i < 5; i++) guess += row.children[i].textContent.toLowerCase();
 
       for (let i = 0; i < 5; i++) {
-        if (guess[i] === wordOfTheDay[i]) {
-          row.children[i].classList.add("correct");
-        } else if (wordOfTheDay.includes(guess[i])) {
-          row.children[i].classList.add("present");
-        } else {
-          row.children[i].classList.add("absent");
-        }
+        if (guess[i] === wordOfTheDay[i]) row.children[i].classList.add("correct");
+        else if (wordOfTheDay.includes(guess[i])) row.children[i].classList.add("present");
+        else row.children[i].classList.add("absent");
       }
 
-      if (guess === wordOfTheDay) {
-        message.textContent = "🎉 You guessed it!";
-        gameOver = true;
-        return;
-      }
-
-      currentRow++;
+      if (guess === wordOfTheDay) { message.textContent = "🎉 You guessed it!"; gameOver = true; }
+      else if (++currentRow === 6) { message.textContent = `❌ The word was: ${wordOfTheDay.toUpperCase()}`; gameOver = true; }
       currentTile = 0;
-
-      if (currentRow === 6) {
-        message.textContent = `❌ Out of tries! The word was: ${wordOfTheDay.toUpperCase()}`;
-        gameOver = true;
-      }
     }
 
     // Theme toggle
-    const themeBtn = document.getElementById("theme-toggle");
-    themeBtn.addEventListener("click", () => {
+    document.getElementById("theme-toggle").addEventListener("click", () => {
       document.body.classList.toggle("dark");
-      themeBtn.textContent = document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
     });
   </script>
 </body>
