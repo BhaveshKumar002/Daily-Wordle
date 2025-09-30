@@ -218,32 +218,31 @@
       board.appendChild(row);
     }
 
-    // Countdown timer
+    // Countdown timer - Fixed calculation
     function updateCountdown() {
-      const nowUTC = new Date();
-      const istOffset = 5.5 * 60; // IST is UTC +5:30
-      const nowIST = new Date(nowUTC.getTime() + istOffset * 60 * 1000);
+      const now = new Date();
       
-      // Get next IST midnight
-      const nextMidnightIST = new Date(nowIST);
-      nextMidnightIST.setHours(24, 0, 0, 0);
+      // Create IST time (UTC+5:30)
+      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
       
-      // Convert to UTC for calculation
-      const nextMidnightUTC = new Date(nextMidnightIST.getTime() - istOffset * 60 * 1000);
+      // Get hours, minutes, seconds in IST
+      const istHours = istTime.getUTCHours();
+      const istMinutes = istTime.getUTCMinutes();
+      const istSeconds = istTime.getUTCSeconds();
       
-      const timeLeft = nextMidnightUTC - nowUTC;
+      // Calculate time until next IST midnight (24:00:00)
+      const hoursLeft = 23 - istHours;
+      const minutesLeft = 59 - istMinutes;
+      const secondsLeft = 59 - istSeconds;
       
-      if (timeLeft <= 0) {
-        // If we passed midnight, refresh the page to get the new word
-        location.reload();
-        return;
+      countdownElement.textContent = `Next word in: ${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
+      
+      // If it's exactly midnight IST, refresh the page
+      if (hoursLeft === 23 && minutesLeft === 59 && secondsLeft === 59) {
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
       }
-      
-      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-      
-      countdownElement.textContent = `Next word in: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     
     // Update countdown every second
