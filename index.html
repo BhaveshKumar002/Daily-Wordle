@@ -7,8 +7,37 @@
 </head>
 <body>
   <h1>Daily Wordle</h1>
-  <div id="board"></div>
+
+  <div class="game-container">
+    <!-- Left: Wordle board -->
+    <div id="board"></div>
+
+    <!-- Right: Keyboard -->
+    <div id="keyboard">
+      <div class="keyboard-row">
+        <button>A</button><button>B</button><button>C</button>
+        <button>D</button><button>E</button><button>F</button>
+        <button>G</button><button>H</button><button>I</button>
+      </div>
+      <div class="keyboard-row">
+        <button>J</button><button>K</button><button>L</button>
+        <button>M</button><button>N</button><button>O</button>
+        <button>P</button><button>Q</button><button>R</button>
+      </div>
+      <div class="keyboard-row">
+        <button>S</button><button>T</button><button>U</button>
+        <button>V</button><button>W</button><button>X</button>
+        <button>Y</button><button>Z</button>
+      </div>
+      <div class="keyboard-row">
+        <button class="special" id="enter">Enter</button>
+        <button class="special" id="backspace">⌫</button>
+      </div>
+    </div>
+  </div>
+
   <div id="message"></div>
+  
   <script src="script.js"></script>
 </body>
 </html>
