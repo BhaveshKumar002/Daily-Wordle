@@ -95,7 +95,11 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  #theme-toggle {
+  .header-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  #theme-toggle, #streak-mode {
     padding: 10px 20px;
     border: none;
     border-radius: 12px;
@@ -107,7 +111,7 @@
     transition: transform 0.2s ease, background 0.3s;
     box-shadow: 0 2px 4px var(--shadow);
   }
-  #theme-toggle:hover {
+  #theme-toggle:hover, #streak-mode:hover {
     background: var(--special-hover);
     transform: translateY(-2px);
   }
@@ -333,7 +337,7 @@
     header h1 {
       font-size: 1.7rem;
     }
-    #theme-toggle {
+    #theme-toggle, #streak-mode {
       padding: 8px 16px;
       font-size: 0.9rem;
     }
@@ -373,7 +377,7 @@
     header h1 {
       font-size: 1.5rem;
     }
-    #theme-toggle {
+    #theme-toggle, #streak-mode {
       padding: 6px 12px;
       font-size: 0.8rem;
     }
@@ -402,7 +406,10 @@
 <body>
   <header>
     <h1>Daily Wordle</h1>
-    <button id="theme-toggle">🌙 Dark Mode</button>
+    <div class="header-buttons">
+      <button id="theme-toggle">🌙 Dark Mode</button>
+      <button id="streak-mode">🏆 Streak Mode</button>
+    </div>
   </header>
 
   <div class="game-wrapper">
@@ -570,6 +577,11 @@
       document.body.classList.toggle("dark");
       document.getElementById("theme-toggle").textContent = 
         document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
+    });
+
+    // Streak Mode navigation
+    document.getElementById("streak-mode").addEventListener("click", () => {
+      window.location.href = "streak.html";
     });
   </script>
 </body>
