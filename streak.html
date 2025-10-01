@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streak Wordle</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s, color 0.3s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Background Decorations */
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 10% 20%, rgba(100, 200, 255, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(100, 200, 255, 0.2) 0%, transparent 20%);
+    z-index: -1;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  body.dark::before {
+    background: radial-gradient(circle at 10% 20%, rgba(100, 150, 255, 0.3) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(100, 150, 255, 0.3) 0%, transparent 20%);
+  }
+
+  :root {
+    --bg: #f7f7f7;
+    --text: #1a1a1a;
+    --tile-bg: #ffffff;
+    --tile-border: #d3d6da;
+    --tile-filled: #e6e6e6;
+    --key-bg: #d3d6da;
+    --key-text: #1a1a1a;
+    --key-hover: #b0b0b0;
+    --special-bg: #4cafef;
+    --special-hover: #3a8cd8;
+    --correct: #6aaa64;
+    --present: #c9b458;
+    --absent: #787c7e;
+    --shadow: rgba(0, 0, 0, 0.1);
+  }
+
+  body.dark {
+    --bg: #121213;
+    --text: #d7dadc;
+    --tile-bg: #1d1d1f;
+    --tile-border: #3a3a3c;
+    --tile-filled: #2a2a2c;
+    --key-bg: #3a3a3c;
+    --key-text: #ffffff;
+    --key-hover: #4a4a4c;
+    --special-bg: #4cafef;
+    --special-hover: #3a8cd8;
+    --shadow: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 28px;
+    background: var(--tile-bg);
+    box-shadow: 0 2px 8px var(--shadow);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    background: linear-gradient(90deg, var(--special-bg), var(--special-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  #theme-toggle, #daily-mode {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--special-bg);
+    color: white;
+    transition: transform 0.2s ease, background 0.3s;
+    box-shadow: 0 2px 4px var(--shadow);
+  }
+  #theme-toggle:hover, #daily-mode:hover {
+    background: var(--special-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Main game area */
+  .game-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Board */
+  #board {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .tile {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--tile-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-transform: uppercase;
+    background: var(--tile-bg);
+    transition: all 0.3s ease;
+    transform-style: preserve-3d;
+    box-shadow: 0 2px 4px var(--shadow);
+  }
+  .tile.filled {
+    background: var(--tile-filled);
+    transform: scale(1.05);
+    animation: pop 0.2s ease-out;
+  }
+  .tile.correct, .tile.present, .tile.absent {
+    animation: flip 0.5s ease forwards;
+    animation-delay: calc(var(--tile-index) * 0.1s);
+    border: none;
+    color: white;
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+  .correct { background: var(--correct); }
+  .present { background: var(--present); }
+  .absent { background: var(--absent); }
+
+  /* Animations */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1.05); }
+  }
+  @keyframes flip {
+    0% { transform: perspective(400px) rotateX(0deg); }
+    50% { transform: perspective(400px) rotateX(90deg); }
+    100% { transform: perspective(400px) rotateX(0deg); }
+  }
+
+  /* Keyboard */
+  .keyboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 500px;
+    width: 100%;
+  }
+  #keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+  #keyboard button {
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--key-bg);
+    color: var(--key-text);
+    flex: 1;
+    min-width: 44px;
+    max-width: 52px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    box-shadow: 0 3px 6px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  #keyboard button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.4s ease;
+  }
+  #keyboard button:hover::after {
+    left: 100%;
+  }
+  #keyboard button:hover {
+    background: var(--key-hover);
+    transform: translateY(-2px);
+  }
+  #keyboard button:active {
+    transform: scale(0.95);
+  }
+  #keyboard button.correct { background: var(--correct); color: white; }
+  #keyboard button.present { background: var(--present); color: white; }
+  #keyboard button.absent { background: var(--absent); color: white; }
+  #keyboard .special {
+    background: var(--special-bg);
+    color: white;
+    padding: 16px;
+    font-size: 1rem;
+    flex: 2;
+    min-width: 90px;
+    max-width: 110px;
+  }
+  #keyboard .special:hover {
+    background: var(--special-hover);
+  }
+  .keyboard-row.special-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+  }
+  .keyboard-row-sub {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex: 2;
+  }
+
+  /* Streak Display */
+  #streak {
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 10px 20px;
+    background: var(--tile-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px var(--shadow);
+    margin-bottom: 12px;
+  }
+
+  /* Message */
+  #message {
+    font-size: 1.1rem;
+    font-weight: 500;
+    min-height: 24px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: var(--tile-bg);
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+  #message:not(:empty) {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* New Game Button */
+  #new-game {
+    display: none;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--special-bg);
+    color: white;
+    transition: transform 0.2s ease, background 0.3s;
+    box-shadow: 0 2px 4px var(--shadow);
+    margin-top: 12px;
+  }
+  #new-game:hover {
+    background: var(--special-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 800px) {
+    .game-wrapper {
+      gap: 20px;
+      padding: 10px;
+    }
+    .tile {
+      width: 50px;
+      height: 50px;
+      font-size: 1.3rem;
+    }
+    header {
+      padding: 12px 20px;
+    }
+    header h1 {
+      font-size: 1.7rem;
+    }
+    #theme-toggle, #daily-mode {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+    #keyboard button {
+      padding: 12px;
+      min-width: 38px;
+      max-width: 46px;
+      font-size: 1rem;
+    }
+    #keyboard .special {
+      padding: 12px;
+      min-width: 80px;
+      max-width: 100px;
+      font-size: 0.9rem;
+    }
+    #streak {
+      font-size: 0.9rem;
+      padding: 8px 16px;
+    }
+    #message {
+      font-size: 1rem;
+      padding: 6px 12px;
+    }
+    #new-game {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+    .keyboard-container {
+      max-width: 400px;
+    }
+  }
+  @media (max-width: 500px) {
+    .tile {
+      width: 45px;
+      height: 45px;
+      font-size: 1.2rem;
+    }
+    header {
+      padding: 10px 16px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+    }
+    #theme-toggle, #daily-mode {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    #keyboard button {
+      padding: 10px;
+      min-width: 34px;
+      max-width: 42px;
+      font-size: 0.9rem;
+    }
+    #keyboard .special {
+      padding: 10px;
+      min-width: 70px;
+      max-width: 90px;
+      font-size: 0.85rem;
+    }
+    #streak {
+      font-size: 0.8rem;
+      padding: 6px 12px;
+    }
+    #new-game {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .keyboard-container {
+      max-width: 340px;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Streak Wordle</h1>
+    <div class="header-buttons">
+      <button id="theme-toggle">🌙 Dark Mode</button>
+      <button id="daily-mode">📅 Daily Mode</button>
+    </div>
+  </header>
+
+  <div class="game-wrapper">
+    <div id="board"></div>
+    <div class="keyboard-container">
+      <div id="streak">Current Streak: 0 🔥</div>
+      <div id="keyboard">
+        <div class="keyboard-row">
+          <button>Q</button><button>W</button><button>E</button><button>R</button><button>T</button>
+          <button>Y</button><button>U</button><button>I</button><button>O</button><button>P</button>
+        </div>
+        <div class="keyboard-row">
+          <div style="flex: 0.5;"></div>
+          <button>A</button><button>S</button><button>D</button><button>F</button><button>G</button>
+          <button>H</button><button>J</button><button>K</button><button>L</button>
+          <div style="flex: 0.5;"></div>
+        </div>
+        <div class="keyboard-row special-row">
+          <button class="special" id="enter">Enter</button>
+          <div class="keyboard-row-sub">
+            <button>Z</button><button>X</button><button>C</button><button>V</button>
+            <button>B</button><button>N</button><button>M</button>
+          </div>
+          <button class="special" id="backspace">⌫</button>
+        </div>
+      </div>
+      <div id="message"></div>
+      <button id="new-game">New Game</button>
+    </div>
+  </div>
+
+  <script>
+    let wordOfTheDay = "";
+    let currentRow = 0, currentTile = 0, gameOver = false;
+    let currentStreak = parseInt(localStorage.getItem('currentStreak')) || 0;
+    let highestStreak = parseInt(localStorage.getItem('highestStreak')) || 0;
+    const board = document.getElementById("board");
+    const message = document.getElementById("message");
+    const streakElement = document.getElementById("streak");
+    const newGameButton = document.getElementById("new-game");
+
+    // Update streak display
+    function updateStreakDisplay() {
+      streakElement.textContent = `Current Streak: ${currentStreak} 🔥`;
+    }
+    updateStreakDisplay();
+
+    // Fetch words from JSON and pick a random word
+    async function getWordOfTheDay() {
+      try {
+        const response = await fetch("words.json");
+        const data = await response.json();
+        const words = data.words;
+        const randomIndex = Math.floor(Math.random() * words.length);
+        wordOfTheDay = words[randomIndex].toLowerCase();
+        console.log("Current word:", wordOfTheDay);
+      } catch (error) {
+        console.error("Failed to load words.json", error);
+        message.textContent = "Error loading word list. Please try again.";
+      }
+    }
+
+    // Initialize board
+    function initializeBoard() {
+      board.innerHTML = "";
+      for (let i = 0; i < 6; i++) {
+        let row = document.createElement("div");
+        row.classList.add("row");
+        for (let j = 0; j < 5; j++) {
+          let tile = document.createElement("div");
+          tile.classList.add("tile");
+          tile.style.setProperty('--tile-index', j);
+          row.appendChild(tile);
+        }
+        board.appendChild(row);
+      }
+    }
+
+    // Reset game state
+    function resetGame() {
+      currentRow = 0;
+      currentTile = 0;
+      gameOver = false;
+      message.textContent = "";
+      newGameButton.style.display = "none";
+      document.querySelectorAll("#keyboard button").forEach(btn => {
+        btn.classList.remove("correct", "present", "absent");
+      });
+      initializeBoard();
+      getWordOfTheDay();
+    }
+
+    // Start initial game
+    resetGame();
+
+    // Input handling
+    document.addEventListener("keydown", e => handleInput(e.key));
+    document.querySelectorAll("#keyboard button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        let key = btn.textContent;
+        if (btn.id === "enter") key = "Enter";
+        if (btn.id === "backspace") key = "Backspace";
+        handleInput(key);
+      });
+    });
+
+    function handleInput(key) {
+      if (gameOver) return;
+      if (/^[a-zA-Z]$/.test(key) && currentTile < 5) {
+        let tile = board.children[currentRow].children[currentTile];
+        tile.textContent = key.toUpperCase();
+        tile.classList.add("filled");
+        currentTile++;
+      } else if (key === "Backspace" && currentTile > 0) {
+        currentTile--;
+        let tile = board.children[currentRow].children[currentTile];
+        tile.textContent = "";
+        tile.classList.remove("filled");
+      } else if (key === "Enter" && currentTile === 5) checkWord();
+    }
+
+    function checkWord() {
+      let row = board.children[currentRow];
+      let guess = "";
+      for (let i = 0; i < 5; i++) guess += row.children[i].textContent.toLowerCase();
+
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === wordOfTheDay[i]) {
+          row.children[i].classList.add("correct");
+          document.querySelectorAll(`#keyboard button`).forEach(btn => {
+            if (btn.textContent.toLowerCase() === guess[i]) btn.classList.add("correct");
+          });
+        } else if (wordOfTheDay.includes(guess[i])) {
+          row.children[i].classList.add("present");
+          document.querySelectorAll(`#keyboard button`).forEach(btn => {
+            if (btn.textContent.toLowerCase() === guess[i] && !btn.classList.contains("correct"))
+              btn.classList.add("present");
+          });
+        } else {
+          row.children[i].classList.add("absent");
+          document.querySelectorAll(`#keyboard button`).forEach(btn => {
+            if (btn.textContent.toLowerCase() === guess[i]) btn.classList.add("absent");
+          });
+        }
+      }
+
+      if (guess === wordOfTheDay) {
+        currentStreak++;
+        if (currentStreak > highestStreak) {
+          highestStreak = currentStreak;
+          localStorage.setItem('highestStreak', highestStreak);
+        }
+        localStorage.setItem('currentStreak', currentStreak);
+        message.textContent = `🎉 You guessed it! Streak: ${currentStreak} 🔥`;
+        updateStreakDisplay();
+        gameOver = true;
+        setTimeout(resetGame, 2000); // Start new game after 2 seconds
+      } else if (++currentRow === 6) {
+        message.textContent = `❌ You lost! Your highest streak: ${highestStreak} 🔥`;
+        currentStreak = 0;
+        localStorage.setItem('currentStreak', currentStreak);
+        updateStreakDisplay();
+        gameOver = true;
+        newGameButton.style.display = "block";
+      }
+      currentTile = 0;
+    }
+
+    // New Game button handler
+    newGameButton.addEventListener("click", resetGame);
+
+    // Dark/Light mode
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      document.getElementById("theme-toggle").textContent = 
+        document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
+    });
+
+    // Daily Mode navigation
+    document.getElementById("daily-mode").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
