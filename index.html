@@ -66,9 +66,12 @@
     font-weight: 600;
     background: var(--special-bg);
     color: white;
-    transition: 0.3s;
+    transition: transform 0.2s ease, background 0.3s;
   }
-  #theme-toggle:hover { background: var(--special-hover); }
+  #theme-toggle:hover {
+    background: var(--special-hover);
+    transform: scale(1.05);
+  }
 
   /* Main game area */
   .game-wrapper {
@@ -93,19 +96,43 @@
     gap: 8px;
   }
   .tile {
-    width: 60px; height: 60px;
+    width: 60px;
+    height: 60px;
     border: 2px solid var(--tile-border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
     border-radius: 6px;
     text-transform: uppercase;
     background: var(--tile-bg);
-    transition: 0.3s all;
+    transition: transform 0.2s ease, background 0.3s, border 0.3s, color 0.3s;
+    transform-style: preserve-3d;
   }
-  .tile.filled { transform: scale(1.05); }
+  .tile.filled {
+    transform: scale(1.1);
+    animation: pop 0.2s ease-out;
+  }
+  .tile.correct, .tile.present, .tile.absent {
+    animation: flip 0.5s ease forwards;
+    animation-delay: calc(var(--tile-index) * 0.1s);
+  }
   .correct { background: #6aaa64; color: white; border: none; }
   .present { background: #c9b458; color: white; border: none; }
   .absent { background: #787c7e; color: white; border: none; }
+
+  /* Animations */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1.05); }
+  }
+  @keyframes flip {
+    0% { transform: perspective(400px) rotateX(0deg); }
+    50% { transform: perspective(400px) rotateX(90deg); }
+    100% { transform: perspective(400px) rotateX(0deg); }
+  }
 
   /* Keyboard */
   .keyboard-container {
@@ -114,21 +141,41 @@
     align-items: center;
     gap: 15px;
   }
-  #keyboard { display: flex; flex-direction: column; gap: 8px; }
-  .keyboard-row { display: flex; justify-content: center; gap: 6px; }
+  #keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
   #keyboard button {
     padding: 14px 16px;
-    border: none; border-radius: 6px;
-    font-weight: 600; cursor: pointer;
-    background: var(--key-bg); color: var(--key-text);
-    min-width: 40px; transition: 0.2s;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--key-bg);
+    color: var(--key-text);
+    min-width: 40px;
+    transition: transform 0.1s ease, background 0.2s;
   }
-  #keyboard button:hover { background: var(--key-hover); }
+  #keyboard button:active {
+    transform: scale(0.95);
+  }
+  #keyboard button:hover {
+    background: var(--key-hover);
+  }
   #keyboard .special {
     background: var(--special-bg);
-    color: white; padding: 14px 24px;
+    color: white;
+    padding: 14px 24px;
   }
-  #keyboard .special:hover { background: var(--special-hover); }
+  #keyboard .special:hover {
+    background: var(--special-hover);
+  }
 
   /* Message */
   #message {
@@ -136,6 +183,15 @@
     font-weight: 600;
     min-height: 28px;
     text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  #message:not(:empty) {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   /* Countdown Timer */
@@ -148,8 +204,12 @@
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-bottom: 10px;
+    animation: pulse 2s ease-in-out infinite;
   }
-
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
 </style>
 </head>
 <body>
@@ -213,6 +273,7 @@
       for(let j=0;j<5;j++){
         let tile=document.createElement("div");
         tile.classList.add("tile");
+        tile.style.setProperty('--tile-index', j); // Set tile index for animation delay
         row.appendChild(tile);
       }
       board.appendChild(row);
