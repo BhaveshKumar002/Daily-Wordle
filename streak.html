@@ -426,7 +426,7 @@
   <div class="game-wrapper">
     <div id="board"></div>
     <div class="keyboard-container">
-      <div id="streak">Current Streak: 0 🔥</div>
+      <div id="streak">Current Streak: 0 🔥 | Highest Streak: 0 🏆</div>
       <div id="keyboard">
         <div class="keyboard-row">
           <button>Q</button><button>W</button><button>E</button><button>R</button><button>T</button>
@@ -464,7 +464,7 @@
 
     // Update streak display
     function updateStreakDisplay() {
-      streakElement.textContent = `Current Streak: ${currentStreak} 🔥`;
+      streakElement.textContent = `Current Streak: ${currentStreak} 🔥 | Highest Streak: ${highestStreak} 🏆`;
     }
     updateStreakDisplay();
 
@@ -579,7 +579,7 @@
         gameOver = true;
         setTimeout(resetGame, 2000); // Start new game after 2 seconds
       } else if (++currentRow === 6) {
-        message.textContent = `❌ You lost! Your highest streak: ${highestStreak} 🔥`;
+        message.textContent = `❌ You lost!`;
         currentStreak = 0;
         localStorage.setItem('currentStreak', currentStreak);
         updateStreakDisplay();
